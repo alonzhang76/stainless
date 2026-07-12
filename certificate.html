@@ -128,6 +128,22 @@
   .element-col {
     width: 7.69%;
   }
+  .element-header {
+    background: #ff8c00;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+  }
+  .element-value {
+    background: #ff8c00;
+    color: white;
+    text-align: center;
+  }
+  .measurement-value {
+    background: #add8e6;
+    color: #333;
+    text-align: center;
+  }
   .print-btn {
     position: fixed;
     top: 20px;
@@ -209,47 +225,14 @@
       <td class="label-cell" colspan="2" style="text-align: left;">订货单位<br><span class="en-text">Ordering unit</span></td>
       <td contenteditable="true" id="customer" colspan="11"></td>
     </tr>
-    <tr>
+    <tr id="chemHeaderRow">
       <td class="label-cell" rowspan="3">化学成分(%)<br><span class="en-text">Chemical Composition(%)</span></td>
       <td class="label-cell" rowspan="2">元素</td>
-      <td class="label-cell element-col">C</td>
-      <td class="label-cell element-col">Mn</td>
-      <td class="label-cell element-col">Si</td>
-      <td class="label-cell element-col">S</td>
-      <td class="label-cell element-col">P</td>
-      <td class="label-cell element-col">Ni</td>
-      <td class="label-cell element-col">Cr</td>
-      <td class="label-cell element-col">Mo</td>
-      <td class="label-cell element-col">W</td>
-      <td class="label-cell element-col">V</td>
-      <td class="label-cell element-col">Fe</td>
     </tr>
-    <tr>
-      <td contenteditable="true" id="chemC" class="element-col">Max</td>
-      <td contenteditable="true" id="chemMn" class="element-col">Max</td>
-      <td contenteditable="true" id="chemSi" class="element-col">Max</td>
-      <td contenteditable="true" id="chemS" class="element-col">Max</td>
-      <td contenteditable="true" id="chemP" class="element-col">Max</td>
-      <td contenteditable="true" id="chemNi" class="element-col"></td>
-      <td contenteditable="true" id="chemCr" class="element-col"></td>
-      <td contenteditable="true" id="chemMo" class="element-col"></td>
-      <td contenteditable="true" id="chemW" class="element-col"></td>
-      <td contenteditable="true" id="chemV" class="element-col"></td>
-      <td contenteditable="true" id="chemFe" class="element-col"></td>
+    <tr id="chemValueRow">
     </tr>
-    <tr>
+    <tr id="chemMeasurementRow">
       <td class="label-cell">测量值</td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
-      <td contenteditable="true" class="element-col"></td>
     </tr>
     <tr>
       <td rowspan="2" class="diagonal-cell">
@@ -396,31 +379,71 @@
             
             if (grade.composition) {
               const composition = grade.composition;
+              const elementParts = composition.split(',');
+              const elements = [];
               
-              const parseElement = function(element) {
-                const regex = new RegExp(element + '([:≤≥\\d\\-.~, ]+)');
-                const match = composition.match(regex);
-                if (match && match[1]) {
-                  const value = match[1].trim();
-                  if (value.startsWith('≤')) return value;
-                  if (value.startsWith('≥')) return value;
-                  if (value.startsWith(':')) return value.substring(1).trim();
-                  return value;
+              elementParts.forEach(function(part) {
+                part = part.trim();
+                if (!part) return;
+                
+                const elementMatch = part.match(/^([A-Z][a-z]?)([:≤≥]?.*)$/);
+                if (elementMatch) {
+                  let elementName = elementMatch[1];
+                  let elementValue = elementMatch[2].trim();
+                  
+                  if (elementValue.startsWith(':')) {
+                    elementValue = elementValue.substring(1).trim();
+                  }
+                  
+                  elements.push({
+                    name: elementName,
+                    value: elementValue || 'Max'
+                  });
                 }
-                return '';
-              };
+              });
               
-              document.getElementById('chemC').textContent = parseElement('C') || 'Max';
-              document.getElementById('chemMn').textContent = parseElement('Mn') || 'Max';
-              document.getElementById('chemSi').textContent = parseElement('Si') || 'Max';
-              document.getElementById('chemS').textContent = parseElement('S') || 'Max';
-              document.getElementById('chemP').textContent = parseElement('P') || 'Max';
-              document.getElementById('chemNi').textContent = parseElement('Ni') || '';
-              document.getElementById('chemCr').textContent = parseElement('Cr') || '';
-              document.getElementById('chemMo').textContent = parseElement('Mo') || '';
-              document.getElementById('chemW').textContent = parseElement('W') || '';
-              document.getElementById('chemV').textContent = parseElement('V') || '';
-              document.getElementById('chemFe').textContent = parseElement('Fe') || '';
+              const headerRow = document.getElementById('chemHeaderRow');
+              const valueRow = document.getElementById('chemValueRow');
+              const measurementRow = document.getElementById('chemMeasurementRow');
+              
+              elements.forEach(function(el) {
+                const headerCell = document.createElement('td');
+                headerCell.className = 'element-header';
+                headerCell.textContent = el.name;
+                headerRow.appendChild(headerCell);
+                
+                const valueCell = document.createElement('td');
+                valueCell.className = 'element-value';
+                valueCell.setAttribute('contenteditable', 'true');
+                valueCell.textContent = el.value;
+                valueRow.appendChild(valueCell);
+                
+                const measurementCell = document.createElement('td');
+                measurementCell.className = 'measurement-value';
+                measurementCell.setAttribute('contenteditable', 'true');
+                measurementRow.appendChild(measurementCell);
+              });
+              
+              const remainingCells = 11 - elements.length;
+              if (remainingCells > 0) {
+                for (let i = 0; i < remainingCells; i++) {
+                  const headerCell = document.createElement('td');
+                  headerCell.className = 'element-header';
+                  headerCell.textContent = '-';
+                  headerRow.appendChild(headerCell);
+                  
+                  const valueCell = document.createElement('td');
+                  valueCell.className = 'element-value';
+                  valueCell.setAttribute('contenteditable', 'true');
+                  valueCell.textContent = '-';
+                  valueRow.appendChild(valueCell);
+                  
+                  const measurementCell = document.createElement('td');
+                  measurementCell.className = 'measurement-value';
+                  measurementCell.setAttribute('contenteditable', 'true');
+                  measurementRow.appendChild(measurementCell);
+                }
+              }
             }
           }
         }
