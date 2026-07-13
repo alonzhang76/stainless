@@ -176,8 +176,13 @@
 <div class="certificate">
 
   <div class="header">
-    <h1 contenteditable="true" id="companyName">无锡泰坦福新材料有限公司</h1>
-    <h2 contenteditable="true">Wuxi Titanic Fortress Material Co., Ltd</h2>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;">
+      <img id="companyLogo" src="" alt="公司logo" style="width: 60px; height: 60px; object-fit: contain;" />
+      <div style="text-align: left;">
+        <h1 contenteditable="true" id="companyName" style="margin: 0; font-size: 20px;">无锡泰坦福新材料有限公司</h1>
+        <h2 contenteditable="true" style="margin: 0; font-size: 14px;">Wuxi Titanic Fortress Material Co., Ltd</h2>
+      </div>
+    </div>
     <div class="subtitle">Address: Room 321, 3rd Floor, Mao'an Neighborhood Center, Liangxi District, Wuxi City, Jiangsu Province, China</div>
     <div style="font-size: 16px; font-weight: bold; margin-top: 8px;">质量证明书</div>
     <div style="font-size: 16px; font-weight: bold;">CERTIFICATE OF QUALITY</div>
@@ -294,16 +299,42 @@
 </div>
 
 <script>
-  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        document.execCommand('insertLineBreak');
-      }
+    document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+      el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.execCommand('insertLineBreak');
+        }
+      });
     });
-  });
 
-  function generateCertificateNo() {
+    function loadLogo() {
+      const logoImg = document.getElementById('companyLogo');
+      if (!logoImg) return;
+      
+      const baseUrl = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+      const logoUrl = baseUrl + 'logo.jpg';
+      
+      fetch(logoUrl)
+        .then(function(response) {
+          if (response.ok) {
+            return response.blob();
+          }
+          throw new Error('Logo not found');
+        })
+        .then(function(blob) {
+          const reader = new FileReader();
+          reader.onloadend = function() {
+            logoImg.src = reader.result;
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(function(e) {
+          console.error('加载logo失败:', e);
+        });
+    }
+
+    function generateCertificateNo() {
     const now = new Date();
     const year = now.getFullYear().toString().substring(2);
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -313,6 +344,8 @@
 
   try {
     const savedData = localStorage.getItem('certificateData');
+    
+    loadLogo();
     
     document.getElementById('certificateNo').textContent = '证书序号：' + generateCertificateNo();
     
